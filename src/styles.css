@@ -224,16 +224,10 @@ input[type="text"]:focus {
   border-radius: 8px;
   padding: 14px;
 }
-.presence-head {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  margin: 0 0 10px;
-}
 .presence-body {
   display: flex;
   gap: 12px;
+  align-items: center;
 }
 .presence-images {
   position: relative;
@@ -317,9 +311,14 @@ input[type="text"]:focus {
 .presence-text {
   min-width: 0;
 }
+/* カードの題名。Portal 上のアプリ名がここに表示される想定のプレースホルダ。 */
 .pv-title {
   font-weight: 700;
-  margin: 0 0 3px;
+  font-size: 15px;
+  margin: 0 0 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .pv-line {
   margin: 0;
