@@ -1,0 +1,68 @@
+name: Release
+
+# v から始まるタグを push したときだけ走る。
+#   git tag v0.1.0 && git push --tags
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    name: build ${{ matrix.platform }} ${{ matrix.args }}
+    permissions:
+      contents: write # Release の作成と成果物の添付に必要
+    strategy:
+      fail-fast: false # 1 OS が落ちても他は最後まで作る
+      matrix:
+        include:
+          - platform: macos-latest
+            args: "--target aarch64-apple-darwin" # Apple Silicon
+          - platform: macos-latest
+            args: "--target x86_64-apple-darwin" # Intel Mac
+          - platform: ubuntu-22.04
+            args: ""
+          - platform: windows-latest
+            args: ""
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: install system dependencies (ubuntu only)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf xdg-utils
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      # フロント自体はビルド不要だが、package.json の @tauri-apps/cli を
+      # tauri-action に使わせるために入れる。
+      - uses: actions/setup-node@v6
+        with:
+          node-version: lts/*
+
+      - run: npm install
+
+      - uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: Discord Work Status ${{ github.ref_name }}
+          releaseBody: |
+            各 OS のインストーラは下の Assets から。
+
+            - Windows: `.msi` または `.exe`
+            - Linux: `.deb` または `.AppImage`（NixOS は `nix build` を使ってね）
+            - macOS: `.dmg`（未署名のため初回は右クリック →「開く」で Gatekeeper を回避）
+          releaseDraft: true # 中身を確認してから手動で公開する
+          prerelease: false
+          args: ${{ matrix.args }}
