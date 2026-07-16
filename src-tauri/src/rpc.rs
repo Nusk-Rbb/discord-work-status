@@ -89,9 +89,7 @@ pub fn is_connected(state: &RpcState) -> bool {
 /// アクティビティ（プレゼンス）を適用する。
 pub fn apply_activity(state: &RpcState, input: &ActivityInput) -> Result<(), String> {
     let mut guard = state.client.lock().unwrap();
-    let client = guard
-        .as_mut()
-        .ok_or("Discord に接続していません")?;
+    let client = guard.as_mut().ok_or("Discord に接続していません")?;
 
     // 経過時間の開始時刻を決める。
     // 有効なら初回のみ現在時刻を記録し、以降は同じ値を使い回す。
@@ -168,9 +166,7 @@ pub fn apply_activity(state: &RpcState, input: &ActivityInput) -> Result<(), Str
 /// プレゼンスを消す（アクティビティ非表示）。
 pub fn clear_activity(state: &RpcState) -> Result<(), String> {
     let mut guard = state.client.lock().unwrap();
-    let client = guard
-        .as_mut()
-        .ok_or("Discord に接続していません")?;
+    let client = guard.as_mut().ok_or("Discord に接続していません")?;
     client.clear_activity().map_err(|e| e.to_string())?;
     *state.elapsed_start.lock().unwrap() = None;
     Ok(())

@@ -43,8 +43,8 @@ const ICON_BASE: &str =
 
 /// 初回起動時に入っているサンプルプリセット。
 fn default_presets() -> Vec<Preset> {
-    let mk = |id: &str, name: &str, details: &str, state: &str, large_text: &str, icon: &str| {
-        Preset {
+    let mk =
+        |id: &str, name: &str, details: &str, state: &str, large_text: &str, icon: &str| Preset {
             id: id.to_string(),
             name: name.to_string(),
             activity: ActivityInput {
@@ -55,8 +55,7 @@ fn default_presets() -> Vec<Preset> {
                 show_elapsed: true,
                 ..Default::default()
             },
-        }
-    };
+        };
     vec![
         mk(
             "preset-work",
