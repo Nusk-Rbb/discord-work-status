@@ -57,7 +57,6 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: Discord Work Status ${{ github.ref_name }}
-          # __VERSION__ は tauri-action がアプリのバージョンに置換する。
           releaseBody: |
             Discord の Rich Presence を、仕事中・プログラミング中など好きなステータスに
             設定できるデスクトップアプリです。
@@ -74,12 +73,6 @@ jobs:
             | Linux (Debian / Ubuntu) | `.deb` |
             | Linux (Fedora / RHEL) | `.rpm` |
             | Linux (その他) | `.AppImage` |
-
-            NixOS をお使いの場合は、上記のバンドルではなく Flake を利用してください。
-
-            ```sh
-            nix run github:Nusk-Rbb/discord-work-status/v__VERSION__
-            ```
 
             ## 動作要件
 

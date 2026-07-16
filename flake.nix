@@ -32,7 +32,7 @@
         #   nix run
         packages.default = pkgs.rustPlatform.buildRustPackage {
           pname = "discord-work-status";
-          version = "0.0.1";
+          version = "0.0.2";
 
           # フロントエンド (../src) も参照するのでリポジトリ全体を src にする。
           # flake なので git 管理下のファイルだけが対象（target/ は .gitignore 済み）。
