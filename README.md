@@ -40,8 +40,8 @@ Discord の **Rich Presence**（「〇〇をプレイ中」の表示）を、仕
 
 - **Windows** — 「WindowsによってPCが保護されました」と表示されたら、「**詳細情報**」→
   「**実行**」を選択してください。
-- **macOS** — Gatekeeper の警告が表示されたら、アプリを**右クリックして「開く」**を選択して
-  ください。
+- **macOS** — Gatekeeper の警告が表示されたら、アプリを**右クリック**して「**開く**」を
+  選択してください。
 
 > **補足:** この警告は有料のコード署名証明書を購入しても解消されません。Microsoft は
 > [SmartScreen のドキュメント](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/smartscreen-reputation)
