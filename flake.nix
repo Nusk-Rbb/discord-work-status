@@ -24,38 +24,82 @@
           libsoup_3
           libayatana-appindicator # システムトレイ用
         ];
-
-        buildTools = with pkgs; [
-          cargo
-          rustc
-          rustfmt
-          rust-analyzer
-          clippy
-          cargo-tauri
-          nodejs_22
-          pkg-config
-          gobject-introspection
-          wrapGAppsHook
-        ];
       in
       {
+        # NixOS では Tauri の Linux バンドラ（deb/rpm/appimage）は使わない。
+        # FHS パス決め打ち・linuxdeploy 依存で動かないため、素直に Nix でパッケージする。
+        #   nix build   → ./result/bin/discord-work-status
+        #   nix run
+        packages.default = pkgs.rustPlatform.buildRustPackage {
+          pname = "discord-work-status";
+          version = "0.1.0";
+
+          # フロントエンド (../src) も参照するのでリポジトリ全体を src にする。
+          # flake なので git 管理下のファイルだけが対象（target/ は .gitignore 済み）。
+          src = ./.;
+
+          cargoRoot = "src-tauri";
+          buildAndTestSubdir = "src-tauri";
+          cargoLock.lockFile = ./src-tauri/Cargo.lock;
+
+          nativeBuildInputs = with pkgs; [
+            pkg-config
+            wrapGAppsHook3 # GTK/gdk-pixbuf 環境変数のラップ
+          ];
+          buildInputs = libraries;
+
+          # libappindicator-sys は libayatana-appindicator3.so.1 を実行時に dlopen する。
+          # 通常のリンクではないので RPATH では解決されず、LD_LIBRARY_PATH が必要。
+          # これが無いとトレイ生成時に panic して起動直後に落ちる。
+          preFixup = ''
+            gappsWrapperArgs+=(
+              --prefix LD_LIBRARY_PATH : "${pkgs.lib.makeLibraryPath [ pkgs.libayatana-appindicator ]}"
+            )
+          '';
+
+          # フロントは素の HTML/CSS/JS なのでビルド不要。テストも無い。
+          doCheck = false;
+
+          meta = with pkgs.lib; {
+            description = "Discord Rich Presence を自由に設定できるデスクトップアプリ";
+            platforms = platforms.linux;
+            mainProgram = "discord-work-status";
+          };
+        };
+
         devShells.default = pkgs.mkShell {
           buildInputs = libraries;
-          nativeBuildInputs = buildTools;
 
-          # webkitgtk の実行時ライブラリ解決とトレイ用 gdk-pixbuf ローダ
+          nativeBuildInputs = with pkgs; [
+            cargo
+            rustc
+            rustfmt
+            rust-analyzer
+            clippy
+            cargo-tauri
+            nodejs_22
+            pkg-config
+            gobject-introspection
+            wrapGAppsHook3
+          ];
+
+          # GTK / gdk-pixbuf まわりの環境変数（GDK_PIXBUF_MODULE_FILE, XDG_DATA_DIRS 等）は
+          # nativeBuildInputs の wrapGAppsHook3 の setup-hook が自動設定してくれる。
+          #
+          # LD_LIBRARY_PATH は「必要な分だけ」通す。webkit や gtk は cc-wrapper が焼く
+          # RPATH で解決されるので入れる必要はない（nix + Tauri でよく見る「全部入れる」
+          # アドバイスは不要に広い）。libayatana-appindicator だけは libappindicator-sys が
+          # 実行時 dlopen するため、これが無いとトレイ生成で panic する。
           shellHook = ''
-            export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath libraries}:$LD_LIBRARY_PATH"
-            export GDK_PIXBUF_MODULE_FILE="$(echo ${pkgs.librsvg.out}/lib/gdk-pixbuf-2.0/*/loaders.cache)"
-            export XDG_DATA_DIRS="${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}:$XDG_DATA_DIRS"
+            export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath [ pkgs.libayatana-appindicator ]}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
-            # Niri / Wayland 環境で描画が崩れる場合の保険（必要に応じてコメント解除）
+            # Wayland 環境で描画が崩れる場合の保険（必要に応じてコメント解除）
             # export WEBKIT_DISABLE_COMPOSITING_MODE=1
             # export WEBKIT_DISABLE_DMABUF_RENDERER=1
 
             echo "🎮 Discord Work Status dev shell"
-            echo "   起動:  cargo tauri dev"
-            echo "   ビルド: cargo tauri build"
+            echo "   起動:   cargo tauri dev"
+            echo "   ビルド: nix build   (Tauri のバンドラは NixOS では使わない)"
           '';
         };
       });
