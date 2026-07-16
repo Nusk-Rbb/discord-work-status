@@ -9,20 +9,60 @@ Discord の **Rich Presence**（「〇〇をプレイ中」の表示）を、仕
 
 - 🎛 **プリセット管理** — 「仕事中」「プログラミング中」「休憩中」などを登録してワンクリックで切替
 - ✏️ **自由に編集** — 詳細 / 状態テキスト、大小の画像、経過時間、リンクボタン（最大 2 個）
+- 🖼 **画像は URL 直指定 OK** — Portal へのアップロード不要。GIF やアニメ WebP も使える
 - 👀 **ライブプレビュー** — Discord での見え方をその場で確認
-- 🔌 **自分のアプリで動く** — Discord Developer Portal で作った Application ID を入れるだけ
+- 🔌 **セットアップ不要** — Application ID は組み込み済み。起動して「接続」を押すだけ
 - 🖥 **トレイ常駐** — ウィンドウを閉じてもバックグラウンドで動き続ける
 - 💾 **設定は自動保存** — 次回起動時に前回の状態を復元（自動接続オプションつき）
 
-## 事前準備：Discord Application を作る
+## Application ID について
 
-Rich Presence は「自分の Discord アプリ」として表示されるので、まず ID を用意してね。
+接続先の Discord Application ID は `src-tauri/src/rpc.rs` の `CLIENT_ID` に組み込んであるので、
+使う側での準備は不要。この ID は公開前提の値（Client Secret や Bot Token とは別物）で、
+OAuth URL や招待リンクにもそのまま載るものだから、リポジトリに含めて問題ないよ。
+
+**別のアプリとして表示したい場合**（プレゼンスのタイトルや画像を自分のものにしたい）は、
+自分で Application を作って `CLIENT_ID` を差し替えてね。
 
 1. [Discord Developer Portal](https://discord.com/developers/applications) を開く
 2. **New Application** でアプリを作成（この**名前がプレゼンスのタイトル**になる。例: `Work`）
-3. **General Information** の **Application ID**（= Client ID）をコピー → アプリの上部に貼り付け
-4. 画像を使いたい場合は **Rich Presence → Art Assets** に画像をアップロードし、
-   その **キー名**を「大画像キー / 小画像キー」に入力する
+3. **General Information** の **Application ID** をコピーして `rpc.rs` の `CLIENT_ID` に貼る
+
+## 画像の指定方法
+
+一番簡単なのは**組み込みアイコンから選ぶ**こと。編集画面の画像欄の下にアイコンが並んでいる
+ので、クリックすれば URL が入る。仕事 💼 / プログラミング 💻 / 休憩 ☕ など 12 種類。
+
+自分の画像を使いたいときは、欄に直接書けば OK。3 通りを受け付けるよ。
+
+| 書き方 | 例 | 対応形式 | 備考 |
+| --- | --- | --- | --- |
+| **組み込みアイコン** | （ピッカーで選択） | PNG | `src/assets/icons/` の画像。設定なしで使える |
+| **URL 直指定** | `https://example.com/work.gif` | PNG / JPEG / WebP / **GIF / アニメ WebP / AVIF** | 自分でホストする必要あり。許可ドメインの登録は不要 |
+| **アセットキー** | `work` | PNG / JPEG / WebP | Portal の **Rich Presence → Art Assets** にアップロードした画像の名前 |
+
+URL 指定のほうがアニメーション画像も使えて自由度が高い。アセットキーは `CLIENT_ID` の
+アプリに紐づく Art Assets から解決されるので、ID を差し替えた場合は画像もそちらに
+アップロードし直す必要がある。推奨サイズは 1024 x 1024。
+
+### 組み込みアイコンの仕組み
+
+`src/assets/icons/*.png` の 1 ファイルが 2 役を持つ。
+
+- **Discord に渡すのは raw の URL**（`https://raw.githubusercontent.com/.../src/assets/icons/work.png`）。
+  Discord が自分で画像を取りに来るため、ローカルパスではなく公開 URL でないといけない。
+  **このリポジトリが public であることが前提**で、private にすると画像が出なくなる。
+- **アプリ内のプレビューは同じファイルをローカルから読む**ので、オフラインでも表示される。
+
+アイコンを増やすときは、`src/assets/icons/` に PNG を足して `src/main.js` の
+`BUILTIN_ICONS` に 1 行追加する。VS Code の Rich Presence 拡張（[vscord](https://github.com/leonardssh/vscord)）も
+同じく raw.githubusercontent.com でアイコンを配っている。
+
+## ライセンス / クレジット
+
+組み込みアイコンは [Noto Emoji](https://github.com/googlefonts/noto-emoji) の絵文字を
+512x512 の PNG に書き出したもの。Noto Emoji の画像リソースは Apache License 2.0 で
+提供されている（フォント部分は SIL OFL 1.1）。
 
 ## 実行方法
 
@@ -51,7 +91,7 @@ cargo tauri build
 
 ## 使い方
 
-1. アプリを起動し、上部に **Application ID** を入力して「接続」
+1. アプリを起動し、右上の「**接続**」を押す（起動時に自動接続するオプションもあるよ）
 2. 左のプリセットを選ぶ or ＋で新規作成
 3. 詳細・状態・画像などを編集（右にプレビュー）
 4. 下の「**この状態を適用**」で Discord に反映 ✨

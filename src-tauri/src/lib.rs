@@ -23,8 +23,8 @@ fn save_config(app: AppHandle, config: AppConfig) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn connect(state: State<RpcState>, client_id: String) -> Result<(), String> {
-    rpc::connect(&state, &client_id)
+fn connect(state: State<RpcState>) -> Result<(), String> {
+    rpc::connect(&state)
 }
 
 #[tauri::command]

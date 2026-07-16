@@ -3,9 +3,44 @@
 const { invoke } = window.__TAURI__.core;
 const dialog = window.__TAURI__.dialog;
 
+// ---- 組み込みアイコン ----
+//
+// 画像ファイルの実体は src/assets/icons/ の 1 つだけで、2 つの役割を持つ。
+//   - Discord に渡すのは ICON_BASE + file の URL。Discord 側が自分で取りに来るため、
+//     ローカルパスではなく公開 URL でないといけない（= このリポジトリが public である前提）。
+//   - アプリ内プレビューは同じファイルをローカルから読む。オフラインでも出るし、
+//     リポジトリを公開する前でも見た目を確認できる。
+const ICON_BASE =
+  "https://raw.githubusercontent.com/Nusk-Rbb/discord-work-status/main/src/assets/icons/";
+
+const BUILTIN_ICONS = [
+  { file: "work.png", label: "仕事" },
+  { file: "coding.png", label: "プログラミング" },
+  { file: "break.png", label: "休憩" },
+  { file: "meeting.png", label: "会議" },
+  { file: "focus.png", label: "集中" },
+  { file: "study.png", label: "勉強" },
+  { file: "music.png", label: "音楽" },
+  { file: "gaming.png", label: "ゲーム" },
+  { file: "sleeping.png", label: "睡眠" },
+  { file: "meal.png", label: "食事" },
+  { file: "writing.png", label: "執筆" },
+  { file: "commute.png", label: "移動" },
+];
+
+const iconUrl = (file) => ICON_BASE + file;
+const iconLocalPath = (file) => "assets/icons/" + file;
+
+// 組み込みアイコンの URL ならローカルの実体パスを返す。それ以外（外部 URL）は null。
+function localPathForUrl(url) {
+  const v = (url || "").trim();
+  if (!v.startsWith(ICON_BASE)) return null;
+  const file = v.slice(ICON_BASE.length);
+  return BUILTIN_ICONS.some((i) => i.file === file) ? iconLocalPath(file) : null;
+}
+
 // ---- アプリ状態 ----
 let config = {
-  clientId: "",
   presets: [],
   activePresetId: null,
   autoConnect: false,
@@ -17,7 +52,6 @@ let saveTimer = null;
 // ---- DOM ----
 const $ = (id) => document.getElementById(id);
 const els = {
-  clientId: $("client-id"),
   autoConnect: $("auto-connect"),
   statusBadge: $("status-badge"),
   connectBtn: $("connect-btn"),
@@ -32,6 +66,8 @@ const els = {
   largeText: $("f-large-text"),
   smallImage: $("f-small-image"),
   smallText: $("f-small-text"),
+  pickerLarge: $("picker-large"),
+  pickerSmall: $("picker-small"),
   elapsed: $("f-elapsed"),
   btn1Label: $("f-btn1-label"),
   btn1Url: $("f-btn1-url"),
@@ -132,6 +168,8 @@ function selectPreset(id) {
   els.btn2Label.value = btns[1]?.label || "";
   els.btn2Url.value = btns[1]?.url || "";
 
+  markIconSelected(els.pickerLarge, els.largeImage);
+  markIconSelected(els.pickerSmall, els.smallImage);
   renderPresetList();
   updatePreview();
 }
@@ -177,17 +215,80 @@ function onFormChange() {
   const items = els.presetList.querySelectorAll(".preset-item");
   const idx = config.presets.indexOf(p);
   if (items[idx]) items[idx].textContent = p.name || "(名称未設定)";
+  // URL を手打ちした場合もピッカーの選択状態を合わせる。
+  markIconSelected(els.pickerLarge, els.largeImage);
+  markIconSelected(els.pickerSmall, els.smallImage);
   updatePreview();
   scheduleSave();
 }
 
 // ---- プレビュー ----
+
+// 画像欄は「Art Assets のキー名」と「https:// の直リンク」の両方を受け付ける。
+// URL なら実物を出せるので img を描く。キーは実物が手元に無いので名前だけ出す。
+// maxChars はキー名が枠からはみ出さないよう小画像側で切り詰めるため。
+function setPreviewImage(el, value, fallback, maxChars) {
+  const v = (value || "").trim();
+  el.replaceChildren();
+  if (/^https:\/\//i.test(v)) {
+    const img = document.createElement("img");
+    // 組み込みアイコンは実体がローカルにあるので、そっちを読んで通信を省く。
+    img.src = localPathForUrl(v) || v;
+    img.alt = "";
+    el.appendChild(img);
+    return;
+  }
+  el.textContent = v ? (maxChars ? v.slice(0, maxChars) : v) : fallback;
+}
+
+// ---- アイコンピッカー ----
+
+// 入力欄の現在値と一致する選択肢に印をつける。
+function markIconSelected(container, input) {
+  const cur = input.value.trim();
+  for (const btn of container.querySelectorAll(".icon-choice")) {
+    btn.classList.toggle("active", btn.dataset.value === cur);
+  }
+}
+
+function renderIconPicker(container, input) {
+  container.replaceChildren();
+
+  const mk = (value, label, child) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "icon-choice";
+    btn.dataset.value = value;
+    btn.title = label;
+    btn.appendChild(child);
+    btn.addEventListener("click", () => {
+      input.value = value;
+      onFormChange();
+      markIconSelected(container, input);
+    });
+    container.appendChild(btn);
+  };
+
+  const none = document.createElement("span");
+  none.textContent = "✕";
+  mk("", "なし（画像を使わない）", none);
+
+  for (const icon of BUILTIN_ICONS) {
+    const img = document.createElement("img");
+    img.src = iconLocalPath(icon.file);
+    img.alt = icon.label;
+    mk(iconUrl(icon.file), icon.label, img);
+  }
+
+  markIconSelected(container, input);
+}
+
 function updatePreview() {
   const a = readActivity();
-  els.pvLarge.textContent = a.largeImage || "🖼";
+  setPreviewImage(els.pvLarge, a.largeImage, "🖼");
   els.pvLarge.title = a.largeText || "";
   els.pvSmall.style.display = a.smallImage || a.smallText ? "flex" : "none";
-  els.pvSmall.textContent = a.smallImage ? a.smallImage.slice(0, 3) : "•";
+  setPreviewImage(els.pvSmall, a.smallImage, "•", 3);
   els.pvSmall.title = a.smallText || "";
 
   els.pvDetails.textContent = a.details || "詳細";
@@ -222,15 +323,8 @@ async function refreshConnection() {
 }
 
 async function doConnect() {
-  const cid = els.clientId.value.trim();
-  if (!cid) {
-    toast("Client ID を入力してね", "err");
-    return;
-  }
   try {
-    await invoke("connect", { clientId: cid });
-    config.clientId = cid;
-    scheduleSave();
+    await invoke("connect");
     setConnected(true);
     toast("Discord に接続したよ", "ok");
   } catch (e) {
@@ -256,11 +350,6 @@ async function applyCurrent() {
   }
   // 未接続なら先に接続を試みる
   if (!connected) {
-    const cid = els.clientId.value.trim();
-    if (!cid) {
-      toast("先に Client ID を入れて接続してね", "err");
-      return;
-    }
     await doConnect();
     if (!connected) return;
   }
@@ -328,10 +417,6 @@ function bindEvents() {
   els.connectBtn.addEventListener("click", () =>
     connected ? doDisconnect() : doConnect()
   );
-  els.clientId.addEventListener("input", () => {
-    config.clientId = els.clientId.value.trim();
-    scheduleSave();
-  });
   els.autoConnect.addEventListener("change", () => {
     config.autoConnect = els.autoConnect.checked;
     scheduleSave();
@@ -341,6 +426,8 @@ function bindEvents() {
 // ---- 初期化 ----
 async function init() {
   bindEvents();
+  renderIconPicker(els.pickerLarge, els.largeImage);
+  renderIconPicker(els.pickerSmall, els.smallImage);
   try {
     config = await invoke("load_config");
   } catch (e) {
@@ -348,7 +435,6 @@ async function init() {
   }
   // 欠損フィールドの補完
   config.presets = config.presets || [];
-  els.clientId.value = config.clientId || "";
   els.autoConnect.checked = !!config.autoConnect;
 
   selectedId =
@@ -362,7 +448,7 @@ async function init() {
   await refreshConnection();
 
   // 自動接続
-  if (config.autoConnect && config.clientId && !connected) {
+  if (config.autoConnect && !connected) {
     await doConnect();
     if (connected && selectedId) {
       try {

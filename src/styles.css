@@ -68,9 +68,6 @@ body {
   gap: 10px;
   flex-wrap: wrap;
 }
-#client-id {
-  width: 300px;
-}
 .badge {
   padding: 4px 10px;
   border-radius: 999px;
@@ -271,6 +268,51 @@ input[type="text"]:focus {
   justify-content: center;
   font-size: 8px;
   color: #fff;
+  overflow: hidden;
+}
+/* ---- 組み込みアイコンのピッカー ---- */
+.icon-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: -4px;
+}
+.icon-choice {
+  width: 40px;
+  height: 40px;
+  padding: 4px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background: var(--input);
+  color: var(--text-dim);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: 1;
+}
+.icon-choice:hover {
+  border-color: var(--border);
+}
+.icon-choice.active {
+  border-color: var(--accent);
+  background: var(--panel-2);
+}
+.icon-choice img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* URL 指定時に流し込まれる実画像。枠いっぱいに敷く。 */
+.pv-large img,
+.pv-small img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 .presence-text {
   min-width: 0;

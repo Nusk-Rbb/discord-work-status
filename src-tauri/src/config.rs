@@ -21,17 +21,15 @@ pub struct Preset {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct AppConfig {
-    pub client_id: String,
     pub presets: Vec<Preset>,
     pub active_preset_id: Option<String>,
-    /// 起動時に前回の Client ID で自動接続するか。
+    /// 起動時に自動接続するか。
     pub auto_connect: bool,
 }
 
 impl Default for AppConfig {
     fn default() -> Self {
         AppConfig {
-            client_id: String::new(),
             presets: default_presets(),
             active_preset_id: None,
             auto_connect: false,
@@ -39,29 +37,51 @@ impl Default for AppConfig {
     }
 }
 
+/// 組み込みアイコンの公開 URL の基点。`src/main.js` の `ICON_BASE` と対になっている。
+const ICON_BASE: &str =
+    "https://raw.githubusercontent.com/Nusk-Rbb/discord-work-status/main/src/assets/icons/";
+
 /// 初回起動時に入っているサンプルプリセット。
 fn default_presets() -> Vec<Preset> {
-    let mk = |id: &str, name: &str, details: &str, state: &str, large_text: &str| Preset {
-        id: id.to_string(),
-        name: name.to_string(),
-        activity: ActivityInput {
-            details: details.to_string(),
-            state: state.to_string(),
-            large_text: large_text.to_string(),
-            show_elapsed: true,
-            ..Default::default()
-        },
+    let mk = |id: &str, name: &str, details: &str, state: &str, large_text: &str, icon: &str| {
+        Preset {
+            id: id.to_string(),
+            name: name.to_string(),
+            activity: ActivityInput {
+                details: details.to_string(),
+                state: state.to_string(),
+                large_image: format!("{ICON_BASE}{icon}"),
+                large_text: large_text.to_string(),
+                show_elapsed: true,
+                ..Default::default()
+            },
+        }
     };
     vec![
-        mk("preset-work", "仕事中", "仕事中", "集中してます", "Working"),
+        mk(
+            "preset-work",
+            "仕事中",
+            "仕事中",
+            "集中してます",
+            "Working",
+            "work.png",
+        ),
         mk(
             "preset-coding",
             "プログラミング中",
             "プログラミング中",
             "コードを書いています",
             "Coding",
+            "coding.png",
         ),
-        mk("preset-break", "休憩中", "休憩中", "ちょっと一息", "Break"),
+        mk(
+            "preset-break",
+            "休憩中",
+            "休憩中",
+            "ちょっと一息",
+            "Break",
+            "break.png",
+        ),
     ]
 }
 

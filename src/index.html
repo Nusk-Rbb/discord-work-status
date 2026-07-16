@@ -16,13 +16,6 @@
         </div>
       </div>
       <div class="conn">
-        <input
-          id="client-id"
-          type="text"
-          placeholder="Discord Application (Client) ID"
-          autocomplete="off"
-          spellcheck="false"
-        />
         <label class="checkbox small">
           <input id="auto-connect" type="checkbox" />
           起動時に自動接続
@@ -67,25 +60,34 @@
 
           <div class="grid2">
             <label class="field">
-              <span>大画像キー (large image)</span>
-              <input id="f-large-image" type="text" placeholder="work" />
+              <span>大画像 (large image) — キー or URL</span>
+              <input id="f-large-image" type="text" placeholder="work または https://..." />
             </label>
             <label class="field">
               <span>大画像ホバー文 (large text)</span>
               <input id="f-large-text" type="text" maxlength="128" placeholder="Working" />
             </label>
           </div>
+          <div id="picker-large" class="icon-picker"></div>
 
           <div class="grid2">
             <label class="field">
-              <span>小画像キー (small image)</span>
-              <input id="f-small-image" type="text" placeholder="dot" />
+              <span>小画像 (small image) — キー or URL</span>
+              <input id="f-small-image" type="text" placeholder="dot または https://..." />
             </label>
             <label class="field">
               <span>小画像ホバー文 (small text)</span>
               <input id="f-small-text" type="text" maxlength="128" placeholder="online" />
             </label>
           </div>
+          <div id="picker-small" class="icon-picker"></div>
+
+          <p class="hint">
+            ※ 上のアイコンから選ぶと URL が入る。自分で用意した画像を使うなら
+            <b>https:// の URL</b> を直接貼ってもよくて、こっちは GIF やアニメ WebP も動くよ。
+            Developer Portal の Art Assets にアップロードした画像の<b>キー名</b>も使える
+            （そちらは静止画のみ）。
+          </p>
 
           <label class="checkbox">
             <input id="f-elapsed" type="checkbox" />
@@ -127,8 +129,9 @@
           <div id="pv-buttons" class="pv-buttons"></div>
         </div>
         <p class="hint preview-note">
-          ※ 画像はプレビューではキー名を表示。実際の見た目は Discord Developer Portal に
-          アップロードしたアートアセットで決まるよ。
+          ※ URL を指定した画像はここにそのまま表示される。キー指定の場合は実物を持って
+          こられないのでキー名だけ表示していて、実際の見た目は Developer Portal に
+          アップロードした画像で決まるよ。
         </p>
       </aside>
     </main>

@@ -6,6 +6,13 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
 use serde::{Deserialize, Serialize};
 
+/// このアプリが接続する Discord Application ID（= Client ID）。
+///
+/// Developer Portal で作成したアプリの ID。公開して問題ない値で、Client Secret や
+/// Bot Token とは別物。Portal 上でのアプリ名がプレゼンスのタイトルとして表示され、
+/// 画像キーは同じアプリの Art Assets から解決される。
+pub const CLIENT_ID: &str = "1527182568720695319";
+
 /// アプリ全体で共有する RPC の状態。
 ///
 /// `client` は Discord に接続中の IPC クライアント。未接続なら `None`。
@@ -14,7 +21,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Default)]
 pub struct RpcState {
     pub client: Mutex<Option<DiscordIpcClient>>,
-    pub client_id: Mutex<Option<String>>,
     pub elapsed_start: Mutex<Option<i64>>,
 }
 
@@ -47,10 +53,9 @@ fn now_unix() -> i64 {
 }
 
 /// Discord に接続する。既存の接続があれば閉じてから繋ぎ直す。
-pub fn connect(state: &RpcState, client_id: &str) -> Result<(), String> {
-    let cid = client_id.trim();
-    if cid.is_empty() {
-        return Err("Client ID が空です".into());
+pub fn connect(state: &RpcState) -> Result<(), String> {
+    if CLIENT_ID.is_empty() || !CLIENT_ID.chars().all(|c| c.is_ascii_digit()) {
+        return Err("ビルドに Application ID が埋め込まれていません（rpc.rs の CLIENT_ID）".into());
     }
 
     // 既存接続を閉じる
@@ -58,13 +63,12 @@ pub fn connect(state: &RpcState, client_id: &str) -> Result<(), String> {
         let _ = old.close();
     }
 
-    let mut client = DiscordIpcClient::new(cid).map_err(|e| e.to_string())?;
+    let mut client = DiscordIpcClient::new(CLIENT_ID).map_err(|e| e.to_string())?;
     client.connect().map_err(|e| {
         format!("Discord に接続できませんでした（Discord が起動しているか確認してね）: {e}")
     })?;
 
     *state.client.lock().unwrap() = Some(client);
-    *state.client_id.lock().unwrap() = Some(cid.to_string());
     *state.elapsed_start.lock().unwrap() = None;
     Ok(())
 }
@@ -74,7 +78,6 @@ pub fn disconnect(state: &RpcState) -> Result<(), String> {
     if let Some(mut client) = state.client.lock().unwrap().take() {
         let _ = client.close();
     }
-    *state.client_id.lock().unwrap() = None;
     *state.elapsed_start.lock().unwrap() = None;
     Ok(())
 }
