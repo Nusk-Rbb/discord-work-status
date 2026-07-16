@@ -1,6 +1,6 @@
 [package]
 name = "discord-work-status"
-version = "0.1.0"
+version = "0.0.1"
 description = "Discord Rich Presence を自由に設定できるデスクトップアプリ"
 authors = ["nusk"]
 edition = "2021"
