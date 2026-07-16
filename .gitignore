@@ -1,0 +1,25 @@
+# Rust / Cargo
+/src-tauri/target/
+**/*.rs.bk
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Tauri build output
+/src-tauri/gen/
+
+# Nix
+result
+result-*
+.direnv/
+
+# Editor / OS
+.DS_Store
+*.swp
+.idea/
+
+
+# Added by cargo
+
+/target

@@ -1,0 +1,15 @@
+{
+  "name": "discord-work-status",
+  "version": "0.1.0",
+  "description": "Discord Rich Presence を自由に設定できるデスクトップアプリ",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build": "tauri build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.5.0"
+  }
+}
