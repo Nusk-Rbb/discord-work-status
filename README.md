@@ -34,8 +34,20 @@ Discord の **Rich Presence**（「〇〇をプレイ中」の表示）を、仕
 > アプリが起動している同じマシン**で実行してください。ブラウザ版の Discord では動作しません。
 > WSL 内で実行しても Windows 側の Discord には接続できません。
 
-> macOS 版は未署名のため、初回起動時に Gatekeeper の警告が表示されます。アプリを右クリック
-> して「開く」を選ぶと起動できます。
+### インストール時の警告について
+
+本アプリは未署名のため、初回インストール時に OS の警告が表示されます。次の手順で続行できます。
+
+- **Windows** — 「WindowsによってPCが保護されました」と表示されたら、「**詳細情報**」→
+  「**実行**」を選択してください。
+- **macOS** — Gatekeeper の警告が表示されたら、アプリを**右クリックして「開く」**を選択して
+  ください。
+
+> **補足:** この警告は有料のコード署名証明書を購入しても解消されません。Microsoft は
+> [SmartScreen のドキュメント](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/smartscreen-reputation)
+> で「EV 証明書による SmartScreen の回避は既に廃止されている」と明記しており、署名の有無に
+> かかわらず、ダウンロード数に応じた評価が蓄積されるまで警告は表示されます。警告を確実に
+> 回避できるのは Microsoft Store 経由の配布のみです。
 
 ## 使い方
 
@@ -164,8 +176,12 @@ git push --tags
 - [discord-rich-presence](https://crates.io/crates/discord-rich-presence) — Discord IPC
 - フロントエンドはフレームワーク無し（`withGlobalTauri` で `window.__TAURI__` を直接利用）
 
-## ライセンス / クレジット
+## ライセンス
 
-組み込みアイコンは [Noto Emoji](https://github.com/googlefonts/noto-emoji) の絵文字を
-512x512 の PNG に書き出したものです。Noto Emoji の画像リソースは Apache License 2.0 で
-提供されています（フォント部分は SIL OFL 1.1）。
+本ソフトウェアは [MIT License](LICENSE) のもとで提供されています。
+
+### クレジット
+
+組み込みアイコン（`src/assets/icons/`）は [Noto Emoji](https://github.com/googlefonts/noto-emoji)
+の絵文字を 512x512 の PNG に書き出したものです。Noto Emoji の画像リソースは Apache
+License 2.0 で提供されています（フォント部分は SIL OFL 1.1）。
