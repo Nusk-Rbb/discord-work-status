@@ -57,12 +57,42 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: Discord Work Status ${{ github.ref_name }}
+          # __VERSION__ は tauri-action がアプリのバージョンに置換する。
           releaseBody: |
-            各 OS のインストーラは下の Assets から。
+            Discord の Rich Presence を、仕事中・プログラミング中など好きなステータスに
+            設定できるデスクトップアプリです。
 
-            - Windows: `.msi` または `.exe`
-            - Linux: `.deb` または `.AppImage`（NixOS は `nix build` を使ってね）
-            - macOS: `.dmg`（未署名のため初回は右クリック →「開く」で Gatekeeper を回避）
+            ## インストール
+
+            下の **Assets** から、お使いの環境に合わせてダウンロードしてください。
+
+            | 環境 | ファイル |
+            | --- | --- |
+            | Windows | `.msi`（推奨）または `-setup.exe` |
+            | macOS (Apple Silicon) | `aarch64.dmg` |
+            | macOS (Intel) | `x64.dmg` |
+            | Linux (Debian / Ubuntu) | `.deb` |
+            | Linux (Fedora / RHEL) | `.rpm` |
+            | Linux (その他) | `.AppImage` |
+
+            NixOS をお使いの場合は、上記のバンドルではなく Flake を利用してください。
+
+            ```sh
+            nix run github:Nusk-Rbb/discord-work-status/v__VERSION__
+            ```
+
+            ## 動作要件
+
+            Rich Presence は Discord のローカル IPC を利用します。**Discord デスクトップ
+            アプリが起動している同じマシン**で実行してください。ブラウザ版の Discord では
+            動作しません。
+
+            ## 注意事項
+
+            - macOS 版は未署名のため、初回起動時に Gatekeeper の警告が表示されます。
+              アプリを右クリックして「開く」を選ぶと起動できます。
+            - `.AppImage` は WebKit / GTK のランタイムを同梱するため、他の形式に比べて
+              ファイルサイズが大きくなっています。
           releaseDraft: true # 中身を確認してから手動で公開する
           prerelease: false
           args: ${{ matrix.args }}
