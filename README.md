@@ -147,7 +147,50 @@ git push --tags
 ```
 
 各 OS のビルドが完了すると **下書き（draft）状態の Release** が作成されるので、内容を確認して
-から GitHub 上で publish してください。
+から GitHub 上で publish してください。draft のままだと自動アップデートには反映されません
+（updater は最新の**公開済み**リリースを見に行くため）。
+
+## 自動アップデート
+
+アプリは起動時に GitHub Releases の `latest.json` を確認し、新しいバージョンがあれば
+ダイアログで通知します。「更新する」を選ぶとインストーラをダウンロードして適用し、自動で
+再起動します。[Tauri の updater プラグイン](https://v2.tauri.app/plugin/updater/) を利用しています。
+
+- 対応形式は **Windows（`.msi` / `-setup.exe`）/ macOS（`.app`）/ Linux（`.AppImage`）** です。
+- Linux の `.deb` `.rpm` で入れた場合は自動更新されないので、手動で入れ替えてください。
+  updater プラグイン自体は deb / rpm のインストールに対応していますが、CI が `latest.json`
+  に載せる Linux 向け成果物が AppImage だけのためです（`linux-x86_64-deb` のエントリを
+  用意すれば対応できます）。
+- 更新は署名（minisign）で検証されます。公開鍵は `tauri.conf.json` の `plugins.updater.pubkey`
+  に埋め込まれています。
+- 自動アップデートが有効になるのは、**updater を含むバージョン以降**です。それより前に
+  インストールされたものは一度手動で更新する必要があります。
+
+### メンテナ向け: 署名鍵のセットアップ（初回のみ）
+
+リリースに署名するため、リポジトリの **Settings → Secrets and variables → Actions** に次の
+Secret を登録してください（`release.yml` が参照します）。
+
+| Secret 名 | 値 |
+| --- | --- |
+| `TAURI_SIGNING_PRIVATE_KEY` | `tauri signer generate` で作った秘密鍵の中身（base64 文字列） |
+
+> 鍵をパスワード付きで作った場合は、`release.yml` の `TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""`
+> を `${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}` に変え、同名の Secret も登録して
+> ください。パスワード無しなら空文字のままで動きます（GitHub の Secrets は空値を登録
+> できないため、パスワードはワークフロー内で直接指定しています）。
+
+鍵ペアは次のコマンドで生成できます（`pubkey` はリポジトリに含めて問題ありません。
+**秘密鍵は絶対にコミットしない**でください）。
+
+```sh
+npm install
+npx tauri signer generate -w ~/.tauri/discord-work-status.key
+```
+
+出力された公開鍵を `tauri.conf.json` の `plugins.updater.pubkey` に貼り、秘密鍵を上記の
+Secret に登録します。鍵を紛失すると既存ユーザーへ更新を配信できなくなるので、安全に保管して
+ください。
 
 ## 構成
 
@@ -163,6 +206,7 @@ git push --tags
 │   │   ├── main.rs
 │   │   ├── lib.rs       # Tauri コマンド + トレイ
 │   │   ├── rpc.rs       # Discord IPC ロジック / CLIENT_ID
+│   │   ├── update.rs    # 自動アップデート（updater プラグイン）
 │   │   └── config.rs    # 設定の永続化
 │   ├── Cargo.toml
 │   └── tauri.conf.json
