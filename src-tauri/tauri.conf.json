@@ -22,9 +22,21 @@
       "csp": "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'"
     }
   },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/Nusk-Rbb/discord-work-status/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEZCNjE2Rjg2OTFDMTc3RjQKUldUMGQ4R1JobTloKzBDMGVyR2R1V2c2eGJHaUlEZ0JqZWFOcDkyMlhIdXA2M0lHZWxFSENZT2UK",
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "all",
+    "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

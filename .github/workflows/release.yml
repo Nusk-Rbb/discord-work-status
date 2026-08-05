@@ -54,6 +54,12 @@ jobs:
       - uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 自動アップデート用の署名。秘密鍵はリポジトリの Secrets に登録する。
+          # createUpdaterArtifacts で生成された成果物に署名し、latest.json を Release に添付する。
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          # 鍵はパスワード無しで生成しているので空文字を渡す（GitHub の Secrets は
+          # 空値を登録できないため、Secret ではなくここで直接指定する）。
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
         with:
           tagName: ${{ github.ref_name }}
           releaseName: Discord Work Status ${{ github.ref_name }}

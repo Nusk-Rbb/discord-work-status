@@ -1,5 +1,6 @@
 mod config;
 mod rpc;
+mod update;
 
 use tauri::{
     menu::{Menu, MenuItem},
@@ -70,7 +71,9 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(RpcState::default())
+        .manage(update::PendingUpdate::default())
         .invoke_handler(tauri::generate_handler![
             load_config,
             save_config,
@@ -80,6 +83,8 @@ pub fn run() {
             apply_activity,
             clear_activity,
             quit_app,
+            update::check_update,
+            update::install_update,
         ])
         .setup(|app| {
             // システムトレイ

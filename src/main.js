@@ -424,6 +424,39 @@ function bindEvents() {
 }
 
 // ---- 初期化 ----
+// ---- アップデート確認（起動時） ----
+//
+// GitHub Releases の latest.json を見て、新しいバージョンがあれば確認ダイアログを出す。
+// updater 非対応の環境（.deb / .rpm など）やオフライン時は黙ってスルーする。
+async function checkForUpdate() {
+  let update;
+  try {
+    update = await invoke("check_update");
+  } catch (e) {
+    // 非対応環境・ネットワークエラーは起動の邪魔をしないよう静かに無視
+    return;
+  }
+  if (!update) return;
+
+  let ok = true;
+  if (dialog?.ask) {
+    ok = await dialog.ask(
+      `新しいバージョン ${update.version} が出てるよ（今は ${update.current_version}）。\n` +
+        `今すぐ更新する？ダウンロードして適用したあと、自動で再起動するよ。`,
+      { title: "アップデートがあります", kind: "info" }
+    );
+  }
+  if (!ok) return;
+
+  try {
+    toast(`アップデートを適用中… (${update.version})`, "ok");
+    // 成功すると再起動するので、通常ここから先へは戻ってこない。
+    await invoke("install_update");
+  } catch (e) {
+    toast("アップデートに失敗したよ: " + e, "err");
+  }
+}
+
 async function init() {
   bindEvents();
   renderIconPicker(els.pickerLarge, els.largeImage);
@@ -459,6 +492,9 @@ async function init() {
       }
     }
   }
+
+  // 起動時にアップデートを確認（バックグラウンドで実行、起動をブロックしない）
+  checkForUpdate();
 }
 
 window.addEventListener("DOMContentLoaded", init);
