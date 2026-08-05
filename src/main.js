@@ -427,7 +427,8 @@ function bindEvents() {
 // ---- アップデート確認（起動時） ----
 //
 // GitHub Releases の latest.json を見て、新しいバージョンがあれば確認ダイアログを出す。
-// updater 非対応の環境（.deb / .rpm など）やオフライン時は黙ってスルーする。
+// updater 非対応の環境（.deb / .rpm、開発ビルド）は Rust 側で「更新なし」に倒しているので、
+// ここでは戻り値が空かどうかだけ見ればいい。オフライン時は例外になるので黙ってスルーする。
 async function checkForUpdate() {
   let update;
   try {
@@ -438,14 +439,14 @@ async function checkForUpdate() {
   }
   if (!update) return;
 
-  let ok = true;
-  if (dialog?.ask) {
-    ok = await dialog.ask(
-      `新しいバージョン ${update.version} が出てるよ（今は ${update.current_version}）。\n` +
-        `今すぐ更新する？ダウンロードして適用したあと、自動で再起動するよ。`,
-      { title: "アップデートがあります", kind: "info" }
-    );
-  }
+  // 確認できないまま更新して再起動するのが一番驚かせるので、
+  // ダイアログが使えないときは何もしない側に倒す。
+  if (!dialog?.ask) return;
+  const ok = await dialog.ask(
+    `新しいバージョン ${update.version} が出てるよ（今は ${update.current_version}）。\n` +
+      `今すぐ更新する？ダウンロードして適用したあと、自動で再起動するよ。`,
+    { title: "アップデートがあります", kind: "info" }
+  );
   if (!ok) return;
 
   try {
@@ -494,7 +495,7 @@ async function init() {
   }
 
   // 起動時にアップデートを確認（バックグラウンドで実行、起動をブロックしない）
-  checkForUpdate();
+  checkForUpdate().catch(() => {});
 }
 
 window.addEventListener("DOMContentLoaded", init);

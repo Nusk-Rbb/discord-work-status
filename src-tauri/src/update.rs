@@ -5,11 +5,13 @@
 //! 秘密鍵により署名され、アプリに埋め込んだ公開鍵で検証される。
 //!
 //! 自動更新に対応するのは Windows(MSI/NSIS) / macOS(.app) / Linux(AppImage) のみ。
-//! `.deb` `.rpm` は updater 非対応なので、その場合は手動更新のまま。
+//! `.deb` `.rpm` でインストールした場合は `check_update` の時点で更新なし扱いにする
+//! （理由は `is_updatable_bundle` を参照）。
 
 use std::sync::Mutex;
 
 use serde::Serialize;
+use tauri::utils::{config::BundleType, platform::bundle_type};
 use tauri::{AppHandle, Manager};
 use tauri_plugin_updater::{Update, UpdaterExt};
 
@@ -29,10 +31,31 @@ pub struct UpdateInfo {
     notes: Option<String>,
 }
 
+/// 今動いているバイナリが自動更新の対象かどうか。
+///
+/// updater プラグインは実行中のバイナリがどの形式で配布されたか（ビルド時に埋め込まれる
+/// マーカー）を見てインストール方法を選ぶ。ここで弾かないと次の 2 つで事故る。
+///
+/// - `.deb` / `.rpm`: プラグイン自体は dpkg / rpm でのインストールに対応しているが、
+///   CI が `latest.json` に載せる Linux 向け成果物は AppImage だけ。deb 用のエントリが
+///   無いので AppImage を掴んだまま dpkg に渡してしまい、必ず失敗する。
+/// - 開発ビルド: マーカーが無く AppImage 扱いになるため、`target/debug` の実行ファイルを
+///   ダウンロードした AppImage で上書きしようとする。
+fn is_updatable_bundle() -> bool {
+    if tauri::is_dev() {
+        return false;
+    }
+    !matches!(bundle_type(), Some(BundleType::Deb) | Some(BundleType::Rpm))
+}
+
 /// 新しいバージョンがあるか確認する。あれば情報を返し、`Update` を state に保持する。
 /// 更新が無ければ `None`。updater 非対応環境ではエラー文字列を返す。
 #[tauri::command]
 pub async fn check_update(app: AppHandle) -> Result<Option<UpdateInfo>, String> {
+    if !is_updatable_bundle() {
+        return Ok(None);
+    }
+
     let updater = app.updater().map_err(|e| e.to_string())?;
     let maybe_update = updater.check().await.map_err(|e| e.to_string())?;
 
@@ -45,7 +68,7 @@ pub async fn check_update(app: AppHandle) -> Result<Option<UpdateInfo>, String> 
             };
             // 適用に使うので保持しておく
             if let Some(state) = app.try_state::<PendingUpdate>() {
-                *state.0.lock().unwrap() = Some(update);
+                *state.0.lock().map_err(|e| e.to_string())? = Some(update);
             }
             Ok(Some(info))
         }
@@ -57,14 +80,15 @@ pub async fn check_update(app: AppHandle) -> Result<Option<UpdateInfo>, String> 
 /// 事前に `check_update` を呼んでおく必要がある。
 #[tauri::command]
 pub async fn install_update(app: AppHandle) -> Result<(), String> {
-    // state から取り出す（ロックを跨いで await しないよう、ここで move out する）
+    // state から複製して取り出す（ロックを跨いで await しないよう、ここでロックを閉じる）。
+    // 消費せずクローンするのは、ダウンロードに失敗しても再試行できるようにするため。
     let update = {
         let state = app
             .try_state::<PendingUpdate>()
             .ok_or_else(|| "アップデート状態が初期化されていません".to_string())?;
-        let mut guard = state.0.lock().unwrap();
+        let guard = state.0.lock().map_err(|e| e.to_string())?;
         guard
-            .take()
+            .clone()
             .ok_or_else(|| "適用できるアップデートがありません。先に確認してください".to_string())?
     };
 
