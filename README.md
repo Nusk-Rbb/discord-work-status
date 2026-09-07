@@ -4,7 +4,10 @@ Discord の **Rich Presence**（「〇〇をプレイ中」の表示）を、仕
 好きなステータスに設定できるデスクトップアプリです。Tauri v2 製で Windows / macOS / Linux
 に対応しています。
 
-![tauri](https://img.shields.io/badge/tauri-v2-5865F2)
+[![tauri](https://img.shields.io/badge/tauri-v2-5865F2)](https://tauri.app/)
+[![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
+**📖 ドキュメント: <https://nusk-rbb.github.io/discord-work-status/>**
 
 ## 特徴
 
@@ -19,108 +22,29 @@ Discord の **Rich Presence**（「〇〇をプレイ中」の表示）を、仕
 ## インストール
 
 [Releases](https://github.com/Nusk-Rbb/discord-work-status/releases) から、お使いの環境に
-合わせてダウンロードしてください。
+合わせてダウンロードしてください（Windows: `.msi` / macOS: `.dmg` / Linux: `.deb` `.rpm`
+`.AppImage`）。
 
-| 環境 | ファイル |
-| --- | --- |
-| Windows | `.msi`（推奨）または `-setup.exe` |
-| macOS (Apple Silicon) | `aarch64.dmg` |
-| macOS (Intel) | `x64.dmg` |
-| Linux (Debian / Ubuntu) | `.deb` |
-| Linux (Fedora / RHEL) | `.rpm` |
-| Linux (その他) | `.AppImage` |
+詳しい手順と、初回インストール時に出る OS の警告への対処は
+[インストールガイド](https://nusk-rbb.github.io/discord-work-status/guide/install)を参照して
+ください。
 
 > **動作要件:** Rich Presence は Discord のローカル IPC を利用します。**Discord デスクトップ
 > アプリが起動している同じマシン**で実行してください。ブラウザ版の Discord では動作しません。
-> WSL 内で実行しても Windows 側の Discord には接続できません。
 
-### インストール時の警告について
+## ドキュメント
 
-本アプリは未署名のため、初回インストール時に OS の警告が表示されます。次の手順で続行できます。
-
-- **Windows** — 「WindowsによってPCが保護されました」と表示されたら、「**詳細情報**」→
-  「**実行**」を選択してください。
-- **macOS** — Gatekeeper の警告が表示されたら、アプリを**右クリック**して「**開く**」を
-  選択してください。
-
-> **補足:** この警告は有料のコード署名証明書を購入しても解消されません。Microsoft は
-> [SmartScreen のドキュメント](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/smartscreen-reputation)
-> で「EV 証明書による SmartScreen の回避は既に廃止されている」と明記しており、署名の有無に
-> かかわらず、ダウンロード数に応じた評価が蓄積されるまで警告は表示されます。警告を確実に
-> 回避できるのは Microsoft Store 経由の配布のみです。
-
-## 使い方
-
-1. アプリを起動し、右上の「**接続**」を押します（起動時に自動接続するオプションもあります）。
-2. 左のプリセットを選ぶか、＋ で新規作成します。
-3. 詳細・状態・画像などを編集します。右側にプレビューが表示されます。
-4. 下部の「**この状態を適用**」で Discord に反映されます。
-5. 消したいときは「プレゼンスを消す」を押します。
-
-設定は OS の設定ディレクトリ（`app_config_dir`）配下の `config.json` に保存されます。
-
-## 画像の指定方法
-
-最も簡単なのは**組み込みアイコンから選ぶ**方法です。編集画面の画像欄の下にアイコンが並んで
-いるので、クリックすると URL が入力されます。
-
-自分の画像を使いたい場合は、欄に直接入力してください。次の 3 通りを受け付けます。
-
-| 書き方 | 例 | 対応形式 | 備考 |
-| --- | --- | --- | --- |
-| **組み込みアイコン** | （ピッカーで選択） | PNG | `src/assets/icons/` の画像。設定不要で使えます |
-| **URL 直指定** | `https://example.com/work.gif` | PNG / JPEG / WebP / **GIF / アニメーション WebP / AVIF** | 画像は自分でホストする必要があります。許可ドメインの登録は不要です |
-| **アセットキー** | `work` | PNG / JPEG / WebP | Portal の **Rich Presence → Art Assets** にアップロードした画像の名前 |
-
-URL 指定のほうがアニメーション画像も使えて自由度が高くなっています。アセットキーは
-`CLIENT_ID` のアプリに紐づく Art Assets から解決されるため、ID を差し替えた場合は画像も
-そちらにアップロードし直す必要があります。推奨サイズは 1024 x 1024 です。
-
-### 組み込みアイコンの仕組み
-
-`src/assets/icons/*.png` の 1 ファイルが 2 つの役割を持ちます。
-
-- **Discord に渡すのは raw の URL** です（`https://raw.githubusercontent.com/.../src/assets/icons/work.png`）。
-  Discord 自身が画像を取得しに来るため、ローカルパスではなく公開 URL である必要があります。
-  **このリポジトリが public であることが前提**で、private にすると画像が表示されなくなります。
-- **アプリ内のプレビューは同じファイルをローカルから読みます**。そのためオフラインでも表示されます。
-
-アイコンを追加する場合は、`src/assets/icons/` に PNG を置いて `src/main.js` の
-`BUILTIN_ICONS` に 1 行追加してください。VS Code の Rich Presence 拡張
-（[vscord](https://github.com/leonardssh/vscord)）も同様に raw.githubusercontent.com から
-アイコンを配信しています。
-
-## Application ID について
-
-接続先の Discord Application ID は `src-tauri/src/rpc.rs` の `CLIENT_ID` に組み込まれている
-ため、利用者側での準備は不要です。この ID は公開前提の値であり（Client Secret や Bot Token
-とは別物です）、OAuth URL や招待リンクにもそのまま含まれるものなので、リポジトリに含めて
-問題ありません。
-
-**別のアプリとして表示したい場合**（プレゼンスのタイトルや画像を自分のものにしたい場合）は、
-自分で Application を作成して `CLIENT_ID` を差し替えてください。
-
-1. [Discord Developer Portal](https://discord.com/developers/applications) を開きます。
-2. **New Application** でアプリを作成します。この**名前がプレゼンスのタイトル**になります。
-3. **General Information** の **Application ID** をコピーし、`rpc.rs` の `CLIENT_ID` に貼り付けます。
+| ページ | 内容 |
+| --- | --- |
+| [インストール](https://nusk-rbb.github.io/discord-work-status/guide/install) | ダウンロードと、OS の警告への対処 |
+| [使い方](https://nusk-rbb.github.io/discord-work-status/guide/usage) | プリセットの編集と適用 |
+| [画像の指定方法](https://nusk-rbb.github.io/discord-work-status/guide/images) | 組み込みアイコン / URL 直指定 / アセットキー |
+| [自動アップデート](https://nusk-rbb.github.io/discord-work-status/guide/updates) | 対応形式と署名の検証 |
+| [ソースからビルドする](https://nusk-rbb.github.io/discord-work-status/dev/build) | 開発環境のセットアップと構成 |
+| [Application ID](https://nusk-rbb.github.io/discord-work-status/dev/application-id) | 別のアプリとして表示したい場合 |
+| [リリース手順](https://nusk-rbb.github.io/discord-work-status/dev/release) | タグ push と署名鍵の管理 |
 
 ## ソースからビルドする
-
-### 必要なもの
-
-- [Rust](https://www.rust-lang.org/tools/install)（cargo）
-- 各 OS の前提パッケージ（[Tauri の Prerequisites](https://v2.tauri.app/start/prerequisites/) を参照）
-
-Linux の場合は `webkit2gtk-4.1` と、システムトレイ用の `libayatana-appindicator` が必要です。
-Debian / Ubuntu では次のように入ります。
-
-```sh
-sudo apt install libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf xdg-utils
-```
-
-フロントエンドは素の HTML / CSS / JS でビルド工程を持たないため、Node.js は不要です。
-
-### 手順
 
 ```sh
 cargo install tauri-cli --version "^2.0.0" --locked
@@ -132,106 +56,15 @@ cargo tauri dev      # 開発用に起動
 cargo tauri build    # リリースビルド（インストーラを生成）
 ```
 
-## 自動ビルド（GitHub Actions）
-
-| ワークフロー | いつ動くか | 内容 |
-| --- | --- | --- |
-| `ci.yml` | `main` への push / PR | `cargo fmt --check`、`cargo clippy -D warnings`、`cargo build` |
-| `release.yml` | `v*` タグの push | Windows / macOS / Linux のインストーラを生成し Release に添付 |
-
-リリースの手順は次のとおりです。
-
-```sh
-git tag v0.0.2
-git push --tags
-```
-
-各 OS のビルドが完了すると **下書き（draft）状態の Release** が作成されるので、内容を確認して
-から GitHub 上で publish してください。draft のままだと自動アップデートには反映されません
-（updater は最新の**公開済み**リリースを見に行くため）。
-
-## 自動アップデート
-
-アプリは起動時に GitHub Releases の `latest.json` を確認し、新しいバージョンがあれば
-ダイアログで通知します。「更新する」を選ぶとインストーラをダウンロードして適用し、自動で
-再起動します。[Tauri の updater プラグイン](https://v2.tauri.app/plugin/updater/) を利用しています。
-
-- 現在有効なのは **Windows（`.msi` / `-setup.exe`）/ macOS（`.app`）/ Linux（`.AppImage`）** です。
-- Linux の `.deb` `.rpm` で入れた場合は自動更新されないので、手動で入れ替えてください。
-  これは配信データが足りないからではなく（`latest.json` には `linux-x86_64-deb` /
-  `linux-x86_64-rpm` のエントリが生成されています）、deb / rpm のインストールに root 権限が
-  必要で、GUI から昇格を求めたときの挙動を確認できていないためです。アプリ側で意図的に
-  無効化しています。
-- 更新は署名（minisign）で検証されます。公開鍵は `tauri.conf.json` の `plugins.updater.pubkey`
-  に埋め込まれています。
-- 自動アップデートが有効になるのは、**updater を含むバージョン以降**です。それより前に
-  インストールされたものは一度手動で更新する必要があります。
-
-### メンテナ向け: 署名鍵のセットアップ（初回のみ）
-
-リリースに署名するため、リポジトリの **Settings → Secrets and variables → Actions** に次の
-Secret を登録してください（`release.yml` が参照します）。
-
-| Secret 名 | 値 |
-| --- | --- |
-| `TAURI_SIGNING_PRIVATE_KEY` | `tauri signer generate` で作った秘密鍵の中身（base64 文字列） |
-
-> 鍵をパスワード付きで作った場合は、`release.yml` の `TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""`
-> を `${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}` に変え、同名の Secret も登録して
-> ください。パスワード無しなら空文字のままで動きます（GitHub の Secrets は空値を登録
-> できないため、パスワードはワークフロー内で直接指定しています）。
-
-鍵ペアは次のコマンドで生成できます（`pubkey` はリポジトリに含めて問題ありません。
-**秘密鍵は絶対にコミットしない**でください）。
-
-```sh
-npm install
-npx tauri signer generate -w ~/.tauri/discord-work-status.key
-```
-
-出力された公開鍵を `tauri.conf.json` の `plugins.updater.pubkey` に貼り、秘密鍵を上記の
-Secret に登録します。
-
-> **秘密鍵は Secret に登録する前に、必ず手元の安全な場所（パスワードマネージャ等）へ
-> 保存してください。** GitHub Secrets は書き込み専用で読み出せないため、手元の控えを
-> 失うと鍵は永久に復旧できません。その場合は新しい鍵ペアを作り直すことになり、
-> **既存ユーザー全員が手動で再インストールしない限り自動更新を受け取れなくなります**
-> （署名検証が通らなくなるため）。
-
-## 構成
-
-```
-.
-├── src/                 # フロントエンド（素の HTML/CSS/JS、ビルド不要）
-│   ├── assets/icons/    # 組み込みアイコン（Discord へは raw URL で渡す）
-│   ├── index.html
-│   ├── styles.css
-│   └── main.js
-├── src-tauri/           # Rust バックエンド
-│   ├── src/
-│   │   ├── main.rs
-│   │   ├── lib.rs       # Tauri コマンド + トレイ
-│   │   ├── rpc.rs       # Discord IPC ロジック / CLIENT_ID
-│   │   ├── update.rs    # 自動アップデート（updater プラグイン）
-│   │   └── config.rs    # 設定の永続化
-│   ├── Cargo.toml
-│   └── tauri.conf.json
-├── .github/workflows/   # CI / Release
-└── package.json
-```
-
-## 技術スタック
-
-- [Tauri v2](https://tauri.app/) — Rust バックエンド + WebView フロントエンド
-- [discord-rich-presence](https://crates.io/crates/discord-rich-presence) — Discord IPC
-- フロントエンドはフレームワーク無し（`withGlobalTauri` で `window.__TAURI__` を直接利用）
+前提パッケージなどは[ビルドガイド](https://nusk-rbb.github.io/discord-work-status/dev/build)を
+参照してください。フロントエンドは素の HTML / CSS / JS でビルド工程を持たないため、アプリの
+ビルドに Node.js は不要です。
 
 ## ライセンス
 
 本ソフトウェアは [MIT License](LICENSE) のもとで提供されています。
 
-### クレジット
-
-組み込みアイコン（`src/assets/icons/`）は [Noto Emoji](https://github.com/googlefonts/noto-emoji)
-の絵文字を 512x512 の PNG に書き出したものです。Noto Emoji の画像リソースは Apache
-License 2.0 で提供されています（フォント部分は SIL OFL 1.1）。
+組み込みアイコン（`src/assets/icons/`）は
+[Noto Emoji](https://github.com/googlefonts/noto-emoji) の絵文字を 512x512 の PNG に
+書き出したものです。Noto Emoji の画像リソースは Apache License 2.0 で提供されています
+（フォント部分は SIL OFL 1.1）。

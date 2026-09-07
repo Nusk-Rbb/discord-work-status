@@ -1,0 +1,16 @@
+{
+  "name": "discord-work-status-docs",
+  "version": "0.0.0",
+  "description": "discord-work-status のドキュメントサイト",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "docs:dev": "vitepress dev",
+    "docs:build": "vitepress build",
+    "docs:preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.3"
+  }
+}
