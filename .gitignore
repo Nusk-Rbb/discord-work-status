@@ -6,6 +6,10 @@
 node_modules/
 npm-debug.log*
 
+# ドキュメントサイト（VitePress）のビルド成果物
+/docs/.vitepress/dist/
+/docs/.vitepress/cache/
+
 # Tauri build output
 /src-tauri/gen/
 

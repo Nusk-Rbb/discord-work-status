@@ -1,0 +1,63 @@
+name: Docs
+
+# ドキュメントサイトを GitHub Pages へデプロイする。
+# docs/ 配下を触ったときだけ走らせる（アプリ側の変更で無駄に動かさない）。
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - ".github/workflows/docs.yml"
+  # Settings から手動でも流せるようにしておく
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write # Pages へのデプロイに必要
+  id-token: write # deploy-pages の OIDC 認証に必要
+
+# デプロイは同時に 1 つだけ。実行中のものは最後まで走らせる
+# （途中で止めると Pages が中途半端な状態で残るため cancel-in-progress は false）。
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # lastUpdated を git の履歴から取るため全部持ってくる
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: docs/package-lock.json
+
+      - uses: actions/configure-pages@v5
+
+      - name: install dependencies
+        working-directory: docs
+        run: npm ci
+
+      - name: build
+        working-directory: docs
+        run: npm run docs:build
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/.vitepress/dist
+
+  deploy:
+    name: deploy
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-22.04
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
