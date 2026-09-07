@@ -4,8 +4,9 @@
 //! インストーラをダウンロードして適用する。成果物は CI（`release.yml`）で
 //! 秘密鍵により署名され、アプリに埋め込んだ公開鍵で検証される。
 //!
-//! 自動更新に対応するのは Windows(MSI/NSIS) / macOS(.app) / Linux(AppImage) のみ。
-//! `.deb` `.rpm` でインストールした場合は `check_update` の時点で更新なし扱いにする
+//! 現状で自動更新を有効にしているのは Windows(MSI/NSIS) / macOS(.app) /
+//! Linux(AppImage)。`.deb` `.rpm` は配信データ自体は揃っているが、権限昇格まわりの
+//! 挙動が未確認のため `check_update` の時点で更新なし扱いにしている
 //! （理由は `is_updatable_bundle` を参照）。
 
 use std::sync::Mutex;
@@ -34,13 +35,25 @@ pub struct UpdateInfo {
 /// 今動いているバイナリが自動更新の対象かどうか。
 ///
 /// updater プラグインは実行中のバイナリがどの形式で配布されたか（ビルド時に埋め込まれる
-/// マーカー）を見てインストール方法を選ぶ。ここで弾かないと次の 2 つで事故る。
+/// マーカー）を見てインストール方法を選ぶ。ここで弾いているのは次の 2 つで、
+/// **理由の性質が違う**ので分けて書く。
 ///
-/// - `.deb` / `.rpm`: プラグイン自体は dpkg / rpm でのインストールに対応しているが、
-///   CI が `latest.json` に載せる Linux 向け成果物は AppImage だけ。deb 用のエントリが
-///   無いので AppImage を掴んだまま dpkg に渡してしまい、必ず失敗する。
-/// - 開発ビルド: マーカーが無く AppImage 扱いになるため、`target/debug` の実行ファイルを
-///   ダウンロードした AppImage で上書きしようとする。
+/// - 開発ビルド（実バグの回避・外してはいけない）:
+///   dev ではマーカーが未パッチで `bundle_type()` が `None` になり、AppImage 扱いに
+///   フォールバックする。Linux の AppImage 更新は「現在の実行ファイルを置き換える」
+///   実装なので、`target/debug` のバイナリをダウンロードした AppImage で上書きしに
+///   いく。`tauri dev` のたびに起きる。
+///
+/// - `.deb` / `.rpm`（慎重策・外せる可能性が高い）:
+///   `install_deb` / `install_rpm` が **root 権限を要求する**（pkexec 等）。GUI から
+///   呼んだときに認証ダイアログが出るのか、黙って失敗して「更新を押したのに何も
+///   起きない」に見えるのかを確認できていないため、当面は更新なし扱いにしている。
+///
+///   注意: 「`latest.json` に deb のエントリが無いから」ではない。v0.0.3 の実物を
+///   確認したところ `linux-x86_64-deb` / `linux-x86_64-rpm` は両方生成されており、
+///   `get_urls` は `{os}-{arch}-{installer}` を先に引くので配信データは足りている。
+///   実機（Ubuntu Desktop 等、polkit agent のあるデスクトップ環境）で昇格プロンプト
+///   の挙動を確認できれば、この分岐は deb/rpm を通す方向に変えてよい。
 fn is_updatable_bundle() -> bool {
     if tauri::is_dev() {
         return false;
