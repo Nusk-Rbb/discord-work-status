@@ -156,11 +156,12 @@ git push --tags
 ダイアログで通知します。「更新する」を選ぶとインストーラをダウンロードして適用し、自動で
 再起動します。[Tauri の updater プラグイン](https://v2.tauri.app/plugin/updater/) を利用しています。
 
-- 対応形式は **Windows（`.msi` / `-setup.exe`）/ macOS（`.app`）/ Linux（`.AppImage`）** です。
+- 現在有効なのは **Windows（`.msi` / `-setup.exe`）/ macOS（`.app`）/ Linux（`.AppImage`）** です。
 - Linux の `.deb` `.rpm` で入れた場合は自動更新されないので、手動で入れ替えてください。
-  updater プラグイン自体は deb / rpm のインストールに対応していますが、CI が `latest.json`
-  に載せる Linux 向け成果物が AppImage だけのためです（`linux-x86_64-deb` のエントリを
-  用意すれば対応できます）。
+  これは配信データが足りないからではなく（`latest.json` には `linux-x86_64-deb` /
+  `linux-x86_64-rpm` のエントリが生成されています）、deb / rpm のインストールに root 権限が
+  必要で、GUI から昇格を求めたときの挙動を確認できていないためです。アプリ側で意図的に
+  無効化しています。
 - 更新は署名（minisign）で検証されます。公開鍵は `tauri.conf.json` の `plugins.updater.pubkey`
   に埋め込まれています。
 - 自動アップデートが有効になるのは、**updater を含むバージョン以降**です。それより前に
